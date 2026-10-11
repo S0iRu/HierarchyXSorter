@@ -9,36 +9,53 @@ namespace S0iRu.HierarchyXSorter.Editor
 {
     internal static class HierarchyXSorter
     {
-        const string GameObjectMenuPath = "GameObject/S0iRu/Set Position X by Hierarchy";
-        const string ToolsMenuPath = "Tools/S0iRu/Set Position X by Hierarchy";
+        const string MenuRoot = "ヒエラルキー順に Position X を設定";
+        const string BottomFirstLabel = "下から";
+        const string TopFirstLabel = "上から";
+        const string GameObjectMenuRoot = "GameObject/S0iRu/" + MenuRoot;
+        const string ToolsMenuRoot = "Tools/S0iRu/" + MenuRoot;
 
         // GameObject/ menu fires once per selected object; guard against that.
         static bool _called;
 
-        [MenuItem(GameObjectMenuPath, false, 0)]
-        static void ExecuteFromGameObjectMenu()
+        [MenuItem(GameObjectMenuRoot + "/" + BottomFirstLabel, false, 0)]
+        static void ExecuteGameObjectBottomFirst() => ExecuteFromGameObjectMenu(bottomFirst: true);
+
+        [MenuItem(GameObjectMenuRoot + "/" + BottomFirstLabel, true)]
+        static bool ValidateGameObjectBottomFirst() => HasTwoOrMoreSceneObjects();
+
+        [MenuItem(GameObjectMenuRoot + "/" + TopFirstLabel, false, 1)]
+        static void ExecuteGameObjectTopFirst() => ExecuteFromGameObjectMenu(bottomFirst: false);
+
+        [MenuItem(GameObjectMenuRoot + "/" + TopFirstLabel, true)]
+        static bool ValidateGameObjectTopFirst() => HasTwoOrMoreSceneObjects();
+
+        [MenuItem(ToolsMenuRoot + "/" + BottomFirstLabel, false, 0)]
+        static void ExecuteToolsBottomFirst() => Execute(bottomFirst: true);
+
+        [MenuItem(ToolsMenuRoot + "/" + BottomFirstLabel, true)]
+        static bool ValidateToolsBottomFirst() => HasTwoOrMoreSceneObjects();
+
+        [MenuItem(ToolsMenuRoot + "/" + TopFirstLabel, false, 1)]
+        static void ExecuteToolsTopFirst() => Execute(bottomFirst: false);
+
+        [MenuItem(ToolsMenuRoot + "/" + TopFirstLabel, true)]
+        static bool ValidateToolsTopFirst() => HasTwoOrMoreSceneObjects();
+
+        static void ExecuteFromGameObjectMenu(bool bottomFirst)
         {
             if (_called) return;
             _called = true;
             EditorApplication.delayCall += () => _called = false;
-            Execute();
+            Execute(bottomFirst);
         }
-
-        [MenuItem(GameObjectMenuPath, true)]
-        static bool ValidateGameObjectMenu() => HasTwoOrMoreSceneObjects();
-
-        [MenuItem(ToolsMenuPath, false)]
-        static void ExecuteFromToolsMenu() => Execute();
-
-        [MenuItem(ToolsMenuPath, true)]
-        static bool ValidateToolsMenu() => HasTwoOrMoreSceneObjects();
 
         static bool HasTwoOrMoreSceneObjects()
         {
             return Selection.gameObjects.Count(go => !EditorUtility.IsPersistent(go)) >= 2;
         }
 
-        static void Execute()
+        static void Execute(bool bottomFirst)
         {
             var sceneObjects = Selection.gameObjects
                 .Where(go => !EditorUtility.IsPersistent(go))
@@ -46,13 +63,17 @@ namespace S0iRu.HierarchyXSorter.Editor
 
             if (sceneObjects.Length < 2) return;
 
-            // Sort by hierarchy display order (top-to-bottom), then reverse so bottom comes first.
+            // Hierarchy display order is top-to-bottom. Reverse it when numbering from the bottom.
             Array.Sort(sceneObjects, (a, b) => CompareHierarchyOrder(a.transform, b.transform));
-            Array.Reverse(sceneObjects);
+            if (bottomFirst)
+                Array.Reverse(sceneObjects);
 
             var transforms = sceneObjects.Select(go => go.transform).ToArray();
+            var undoName = bottomFirst
+                ? MenuRoot + "（" + BottomFirstLabel + "）"
+                : MenuRoot + "（" + TopFirstLabel + "）";
 
-            Undo.RecordObjects(transforms.Cast<UnityEngine.Object>().ToArray(), "Set Position X by Hierarchy");
+            Undo.RecordObjects(transforms.Cast<UnityEngine.Object>().ToArray(), undoName);
 
             for (int i = 0; i < transforms.Length; i++)
             {

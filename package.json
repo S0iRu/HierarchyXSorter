@@ -1,8 +1,8 @@
 {
   "name": "com.s0iru.hierarchy-x-sorter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "Hierarchy X Sorter",
-  "description": "Assigns sequential Position.X values (1, 2, 3...) to selected GameObjects based on their hierarchy order (bottom-first).",
+  "description": "Assigns sequential Position.X values (1, 2, 3...) to selected GameObjects in hierarchy order. Choose bottom-first or top-first.",
   "unity": "2022.3",
   "author": {
     "name": "S0iRu",
